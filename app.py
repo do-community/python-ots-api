@@ -22,7 +22,7 @@ r = redis.Redis(
 def create_secret():
     content = request.get_json()
     if all(key in content for key in ("passphrase", "message")) is not True:
-        return "Missing passphrase and/or message", 400
+        return {"success": "False", "message": "Missing passphrase and/or message"}, 400
     passphrase = content["passphrase"]
     message = content["message"]
     if "expiration_time" in content and content["expiration_time"].isdigit():
@@ -58,19 +58,22 @@ def create_secret():
         timedelta(seconds=expiration_time),
         "{0}\n{1}".format(sha, ciphertext.decode("utf-8")),
     )
-    return {"id": id}
+    return {"success": "True", "id": id}
 
 
 @app.route("/secrets/<id>", methods=["POST"])
 def get_secret(id):
     content = request.get_json()
     if "passphrase" not in content:
-        return "Missing passphrase", 400
+        return {"success": "False", "message": "Missing passphrase"}, 400
     passphrase = content["passphrase"]
 
     data = r.get(id)
     if data is None:
-        return "This secret either never existed or it was already read"
+        return {
+            "success": "False",
+            "message": "This secret either never existed or it was already read",
+        }, 404
 
     data = data.decode("utf-8")
     stored_sha, stored_ciphertext = data.split("\n")
@@ -80,7 +83,10 @@ def get_secret(id):
     sha = m.hexdigest()
 
     if stored_sha != sha:
-        return "This secret either never existed or it was already read"
+        return {
+            "success": "False",
+            "message": "This secret either never existed or it was already read",
+        }
 
     r.delete(id)
     # If this doesn't return a value we say secret has either
@@ -98,4 +104,4 @@ def get_secret(id):
     f = Fernet(key)
     decrypted_message = f.decrypt(stored_ciphertext.encode("utf-8"))
 
-    return {"message": decrypted_message.decode("utf-8")}
+    return {"success": "True", "message": decrypted_message.decode("utf-8")}
