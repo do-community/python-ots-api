@@ -5,10 +5,12 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from datetime import timedelta
+from flask_cors import CORS
 import redis
 import uuid
 
 app = Flask(__name__)
+CORS(app)
 
 r = redis.Redis(
     host=os.getenv("DB_HOST", "localhost"),
@@ -21,12 +23,16 @@ r = redis.Redis(
 @app.route("/secrets", methods=["POST"])
 def create_secret():
     content = request.get_json()
-    if content is None or all(key in content for key in ("passphrase", "message")) is not True:
+    if all(key in content for key in ("passphrase", "message")) is not True:
         return {"success": "False", "message": "Missing passphrase and/or message"}, 400
     passphrase = content["passphrase"]
     message = content["message"]
-    if "expiration_time" in content and content["expiration_time"].isdigit():
-        expiration_time = int(content["expiration_time"])
+    if "expiration_time" in content:
+        if isinstance(expiration_time, int) is True:
+            expiration_time = content["expiration_time"]
+        else:
+            if content["expiration_time"].isdigit():
+                expiration_time = int(content["expiration_time"])
     else:
         expiration_time = 604800
 
