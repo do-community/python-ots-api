@@ -21,7 +21,7 @@ r = redis.Redis(
 @app.route("/secrets", methods=["POST"])
 def create_secret():
     content = request.get_json()
-    if all(key in content for key in ("passphrase", "message")) is not True:
+    if content is None or all(key in content for key in ("passphrase", "message")) is not True:
         return {"success": "False", "message": "Missing passphrase and/or message"}, 400
     passphrase = content["passphrase"]
     message = content["message"]
