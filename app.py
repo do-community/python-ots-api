@@ -28,6 +28,7 @@ def create_secret():
     passphrase = content["passphrase"]
     message = content["message"]
     if "expiration_time" in content:
+        expiration_time = content["expiration_time"]
         if isinstance(expiration_time, int) is True:
             expiration_time = content["expiration_time"]
         else:
