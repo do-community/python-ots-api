@@ -10,7 +10,6 @@ import redis
 import uuid
 
 app = Flask(__name__)
-# setting up CORS
 CORS(app)
 
 r = redis.Redis(
